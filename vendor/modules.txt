@@ -1,24 +1,24 @@
 # github.com/go-interpreter/wagon v0.4.0
 github.com/go-interpreter/wagon/exec
 github.com/go-interpreter/wagon/wasm
-github.com/go-interpreter/wagon/internal/stack
 github.com/go-interpreter/wagon/wasm/leb128
 github.com/go-interpreter/wagon/wasm/operators
 github.com/go-interpreter/wagon/disasm
 github.com/go-interpreter/wagon/exec/internal/compile
 github.com/go-interpreter/wagon/wasm/internal/readpos
+github.com/go-interpreter/wagon/internal/stack
 # github.com/golang/protobuf v1.2.0
 github.com/golang/protobuf/proto
 # github.com/perlin-network/life v0.0.0-20190521143330-57f3819c2df0 => github.com/pkedy/life v0.0.0-20190530202850-c437dabbc556
 github.com/perlin-network/life/exec
 github.com/perlin-network/life/platform
+github.com/perlin-network/life/compiler
 github.com/perlin-network/life/compiler/opcodes
 github.com/perlin-network/life/utils
-github.com/perlin-network/life/compiler
 # github.com/vmihailenco/msgpack v4.0.4+incompatible
 github.com/vmihailenco/msgpack
 github.com/vmihailenco/msgpack/codes
-# github.com/wasmerio/go-ext-wasm v0.0.0-20190529183953-15a798de9af3
+# github.com/wasmerio/go-ext-wasm v0.0.0-20190716093451-605a12aad995
 github.com/wasmerio/go-ext-wasm/wasmer
 # golang.org/x/net v0.0.0-20180724234803-3673e40ba225
 golang.org/x/net/context

@@ -80,6 +80,41 @@ func NewInstance(bytes []byte) (Instance, error) {
 
 // NewInstanceWithImports constructs a new `Instance` with imported functions.
 func NewInstanceWithImports(bytes []byte, imports *Imports) (Instance, error) {
+	return newInstanceWithImports(
+		imports,
+		func(wasmImportsCPointer *cWasmerImportT, numberOfImports int) (*cWasmerInstanceT, error) {
+			var instance *cWasmerInstanceT
+
+			var compileResult = cWasmerInstantiate(
+				&instance,
+				(*cUchar)(unsafe.Pointer(&bytes[0])),
+				cUint(len(bytes)),
+				wasmImportsCPointer,
+				cInt(numberOfImports),
+			)
+
+			if compileResult != cWasmerOk {
+				var lastError, err = GetLastError()
+				var errorMessage = "Failed to instantiate the module:\n    %s"
+
+				if err != nil {
+					errorMessage = fmt.Sprintf(errorMessage, "(unknown details)")
+				} else {
+					errorMessage = fmt.Sprintf(errorMessage, lastError)
+				}
+
+				return nil, NewInstanceError(errorMessage)
+			}
+
+			return instance, nil
+		},
+	)
+}
+
+func newInstanceWithImports(
+	imports *Imports,
+	instanceBuilder func(*cWasmerImportT, int) (*cWasmerInstanceT, error),
+) (Instance, error) {
 	var numberOfImports = len(imports.imports)
 	var wasmImports = make([]cWasmerImportT, numberOfImports)
 	var importFunctionNth = 0
@@ -108,7 +143,7 @@ func NewInstanceWithImports(bytes []byte, imports *Imports) (Instance, error) {
 		)
 
 		var importedFunction = cNewWasmerImportT(
-			"env",
+			importFunction.namespace,
 			importName,
 			importFunction.importedFunctionPointer,
 		)
@@ -123,21 +158,13 @@ func NewInstanceWithImports(bytes []byte, imports *Imports) (Instance, error) {
 		wasmImportsCPointer = (*cWasmerImportT)(unsafe.Pointer(&wasmImports[0]))
 	}
 
-	var instance *cWasmerInstanceT
-
-	var compileResult = cWasmerInstantiate(
-		&instance,
-		(*cUchar)(unsafe.Pointer(&bytes[0])),
-		cUint(len(bytes)),
-		wasmImportsCPointer,
-		cInt(numberOfImports),
-	)
+	instance, err := instanceBuilder(wasmImportsCPointer, numberOfImports)
 
 	var memory Memory
 	var emptyInstance = Instance{instance: nil, imports: nil, Exports: nil, Memory: memory}
 
-	if compileResult != cWasmerOk {
-		return emptyInstance, NewInstanceError("Failed to compile the module.")
+	if err != nil {
+		return emptyInstance, err
 	}
 
 	var exports = make(map[string]func(...interface{}) (Value, error))
@@ -385,6 +412,16 @@ func NewInstanceWithImports(bytes []byte, imports *Imports) (Instance, error) {
 	}
 
 	return Instance{instance: instance, imports: imports, Exports: exports, Memory: memory}, nil
+}
+
+// SetContextData assigns a data that can be used by all imported
+// functions. Indeed, each imported function receives as its first
+// argument an instance context (see `InstanceContext`). An instance
+// context can hold a pointer to any kind of data. It is important to
+// understand that this data is shared by all imported function, it's
+// global to the instance.
+func (instance *Instance) SetContextData(data unsafe.Pointer) {
+	cWasmerInstanceContextDataSet(instance.instance, data)
 }
 
 // Close closes/frees an `Instance`.

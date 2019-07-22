@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"reflect"
 	"time"
 	"unsafe"
 
@@ -29,9 +30,6 @@ type TransferActivation struct {
 	Amount uint64 `json:"amount"`
 }
 
-var input []byte
-var instance wasm.Instance
-
 func main() {
 	// Reads the WebAssembly module as bytes.
 	bytes, err := wasm.ReadBytes("transfer_back.wasm")
@@ -53,27 +51,28 @@ func main() {
 	}
 	log.Println(string(reasonBytes))
 
-	input = reasonBytes
-
-	imp := imports{input: reasonBytes}
-
-	// How would calling into a struct func if you want to run Wasmer in
-	// a multi-threaded host?  The imports below end up invoking the exported
-	// funcs instead of the ones implemented in the struct.
 	imports := wasm.NewImports()
-	imports.Append("_reason_len", imp.reasonLen, C._reason_len)
-	imports.Append("_reason", imp.reason, C._reason)
-	imports.Append("_send_transaction", imp.sendTransaction, C._send_transaction)
-	imports.Append("_error", imp.error, C._error)
+	imports.Append("_reason_len", _reason_len, C._reason_len)
+	imports.Append("_reason", _reason, C._reason)
+	imports.Append("_send_transaction", _send_transaction, C._send_transaction)
+	imports.Append("_error", _error, C._error)
+
+	module, err := wasm.Compile(bytes)
+	if err != nil {
+		panic(err)
+	}
+	defer module.Close()
 
 	// Instantiates the WebAssembly module.
-	instance, err = wasm.NewInstanceWithImports(bytes, imports)
+	instance, err := module.InstantiateWithImports(imports)
 	if err != nil {
 		panic(err)
 	}
 	defer instance.Close()
 
-	imp.instance = &instance
+	hdr := *(*reflect.SliceHeader)(unsafe.Pointer(&reasonBytes))
+	context := functionContext{input: hdr}
+	instance.SetContextData(unsafe.Pointer(&context))
 
 	// Gets the `sum` exported function from the WebAssembly instance.
 	contractMain, ok := instance.Exports["contract_main"]
@@ -96,64 +95,60 @@ func main() {
 
 //export _reason_len
 func _reason_len(context unsafe.Pointer) int32 {
-	log.Println("_reason_len called")
-	return int32(len(input))
+	instanceContext := wasm.IntoInstanceContext(context)
+	imp := (*functionContext)(instanceContext.Data())
+	return imp.reasonLen(instanceContext.Memory())
 }
 
 //export _reason
 func _reason(context unsafe.Pointer, ptr int32) {
-	log.Println("_reason called")
-	memory := instance.Memory.Data()
-	//inst := (*wasm.Instance)(context)
-	//memory := inst.Memory.Data()
-	copy(memory[ptr:], input)
+	instanceContext := wasm.IntoInstanceContext(context)
+	imp := (*functionContext)(instanceContext.Data())
+	imp.reason(instanceContext.Memory(), ptr)
 }
 
 //export _send_transaction
 func _send_transaction(context unsafe.Pointer, tagPtr, tagLen, payloadPtr, payloadLen int32) {
-	log.Println("_send_transaction called")
-	memory := instance.Memory.Data()
-	tag := string(memory[tagPtr : tagPtr+tagLen])
-	payload := string(memory[payloadPtr : payloadPtr+payloadLen])
-	log.Printf("tag = %q; payload = %q", tag, payload)
+	instanceContext := wasm.IntoInstanceContext(context)
+	imp := (*functionContext)(instanceContext.Data())
+	imp.sendTransaction(instanceContext.Memory(), tagPtr, tagLen, payloadPtr, payloadLen)
 }
 
 //export _error
 func _error(context unsafe.Pointer, ptr, len int32) {
-	log.Println("_error called")
-	memory := instance.Memory.Data()
-	msg := string(memory[ptr : ptr+len])
-	log.Printf(msg)
+	instanceContext := wasm.IntoInstanceContext(context)
+	imp := (*functionContext)(instanceContext.Data())
+	imp.error(instanceContext.Memory(), ptr, len)
 }
 
-type imports struct {
-	instance *wasm.Instance
-	input    []byte
+type functionContext struct {
+	input reflect.SliceHeader
 }
 
-func (i *imports) reasonLen(context unsafe.Pointer) int32 {
+func (i *functionContext) reasonLen(memory *wasm.Memory) int32 {
 	log.Println("reasonLen called")
-	return int32(len(i.input))
+	in := *(*[]byte)(unsafe.Pointer(&i.input))
+	return int32(len(in))
 }
 
-func (i *imports) reason(context unsafe.Pointer, ptr int32) {
+func (i *functionContext) reason(memory *wasm.Memory, ptr int32) {
 	log.Println("reason called")
-	log.Println(ptr)
-	memory := i.instance.Memory.Data()
-	copy(memory[ptr:], i.input)
+	data := memory.Data()
+	in := *(*[]byte)(unsafe.Pointer(&i.input))
+	copy(data[ptr:], in)
 }
 
-func (i *imports) sendTransaction(context unsafe.Pointer, tagPtr, tagLen, payloadPtr, payloadLen int32) {
+func (i *functionContext) sendTransaction(memory *wasm.Memory, tagPtr, tagLen, payloadPtr, payloadLen int32) {
 	log.Println("sendTransaction called")
-	memory := i.instance.Memory.Data()
-	tag := string(memory[tagPtr : tagPtr+tagLen])
-	payload := string(memory[payloadPtr : payloadPtr+payloadLen])
+	data := memory.Data()
+	tag := string(data[tagPtr : tagPtr+tagLen])
+	payload := string(data[payloadPtr : payloadPtr+payloadLen])
 	log.Printf("tag = %q; payload = %q", tag, payload)
 }
 
-func (i *imports) error(context unsafe.Pointer, ptr, len int32) {
+func (i *functionContext) error(memory *wasm.Memory, ptr, len int32) {
 	log.Println("error called")
-	memory := i.instance.Memory.Data()
-	msg := string(memory[ptr : ptr+len])
+	data := memory.Data()
+	msg := string(data[ptr : ptr+len])
 	log.Printf("Error: " + msg)
 }
