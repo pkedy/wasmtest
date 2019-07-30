@@ -1,7 +1,7 @@
 module github.com/pkedy/wasmtest
 
 require (
-	github.com/go-interpreter/wagon v0.4.0
+	github.com/go-interpreter/wagon v0.5.0
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/perlin-network/life v0.0.0-20190521143330-57f3819c2df0
 	github.com/wasmerio/go-ext-wasm v0.0.0-20190716093451-605a12aad995

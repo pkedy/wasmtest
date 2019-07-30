@@ -25,7 +25,8 @@ type TransferActivation struct {
 }
 
 func main() {
-	raw, err := ioutil.ReadFile("transfer_back.wasm")
+	raw, err := ioutil.ReadFile("function.wasm")
+	//raw, err := ioutil.ReadFile("transfer_back.wasm")
 	if err != nil {
 		log.Fatalf("could not compile wast file: %v", err)
 	}
@@ -71,7 +72,6 @@ func main() {
 					log.Println(err)
 					return
 				}
-				//
 
 				payloadBytes := make([]byte, payloadLen)
 				_, err = proc.ReadAt(payloadBytes, int64(payloadOff))
@@ -179,13 +179,13 @@ func main() {
 		log.Fatalln("could not find contract_main")
 	}
 
-	vm, err := exec.NewVM(m)
+	vm, err := exec.NewVM(m, exec.EnableAOT(true))
 	if err != nil {
 		log.Fatalf("could not create wagon vm: %v", err)
 	}
 
 	start := time.Now()
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < 50000; i++ {
 		_, err = vm.ExecCode(int64(contractFunc.Index))
 		if err != nil {
 			log.Fatalf("could not execute func(): %v", err)

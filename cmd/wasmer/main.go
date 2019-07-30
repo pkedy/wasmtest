@@ -32,7 +32,8 @@ type TransferActivation struct {
 
 func main() {
 	// Reads the WebAssembly module as bytes.
-	bytes, err := wasm.ReadBytes("transfer_back.wasm")
+	bytes, err := wasm.ReadBytes("function.wasm")
+	//bytes, err := wasm.ReadBytes("transfer_back.wasm")
 	if err != nil {
 		panic(err)
 	}
@@ -74,6 +75,12 @@ func main() {
 	context := functionContext{input: hdr}
 	instance.SetContextData(unsafe.Pointer(&context))
 
+	initMem, ok := instance.Exports["init_mem"]
+	if ok {
+		fmt.Printf("calling init_mem\n")
+		initMem()
+	}
+
 	// Gets the `sum` exported function from the WebAssembly instance.
 	contractMain, ok := instance.Exports["contract_main"]
 	if !ok {
@@ -81,7 +88,7 @@ func main() {
 	}
 
 	start := time.Now()
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < 50000; i++ {
 		// Calls that exported function with Go standard values. The WebAssembly
 		// types are inferred and values are casted automatically.
 		_, err := contractMain()
@@ -126,20 +133,20 @@ type functionContext struct {
 }
 
 func (i *functionContext) reasonLen(memory *wasm.Memory) int32 {
-	log.Println("reasonLen called")
+	//log.Println("reasonLen called")
 	in := *(*[]byte)(unsafe.Pointer(&i.input))
 	return int32(len(in))
 }
 
 func (i *functionContext) reason(memory *wasm.Memory, ptr int32) {
-	log.Println("reason called")
+	//log.Println("reason called")
 	data := memory.Data()
 	in := *(*[]byte)(unsafe.Pointer(&i.input))
 	copy(data[ptr:], in)
 }
 
 func (i *functionContext) sendTransaction(memory *wasm.Memory, tagPtr, tagLen, payloadPtr, payloadLen int32) {
-	log.Println("sendTransaction called")
+	//log.Println("sendTransaction called")
 	data := memory.Data()
 	tag := string(data[tagPtr : tagPtr+tagLen])
 	payload := string(data[payloadPtr : payloadPtr+payloadLen])

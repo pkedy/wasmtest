@@ -23,7 +23,8 @@ type TransferActivation struct {
 }
 
 func main() {
-	wasmBytes, err := ioutil.ReadFile("transfer_back.wasm")
+	wasmBytes, err := ioutil.ReadFile("function.wasm")
+	//wasmBytes, err := ioutil.ReadFile("transfer_back.wasm")
 	if err != nil {
 		panic(err)
 	}
@@ -58,7 +59,7 @@ func main() {
 	vm.SetAOTService(aotSvc)
 
 	start := time.Now()
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < 50000; i++ {
 		_, err := vm.Run(entryID)
 		if err != nil {
 			vm.PrintStackTrace()

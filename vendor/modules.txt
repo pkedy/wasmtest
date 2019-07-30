@@ -1,4 +1,6 @@
-# github.com/go-interpreter/wagon v0.4.0
+# github.com/edsrzf/mmap-go v1.0.0
+github.com/edsrzf/mmap-go
+# github.com/go-interpreter/wagon v0.5.0
 github.com/go-interpreter/wagon/exec
 github.com/go-interpreter/wagon/wasm
 github.com/go-interpreter/wagon/wasm/leb128
@@ -15,6 +17,21 @@ github.com/perlin-network/life/platform
 github.com/perlin-network/life/compiler
 github.com/perlin-network/life/compiler/opcodes
 github.com/perlin-network/life/utils
+# github.com/twitchyliquid64/golang-asm v0.0.0-20190315094337-365674df15fc
+github.com/twitchyliquid64/golang-asm
+github.com/twitchyliquid64/golang-asm/obj
+github.com/twitchyliquid64/golang-asm/obj/x86
+github.com/twitchyliquid64/golang-asm/asm/arch
+github.com/twitchyliquid64/golang-asm/objabi
+github.com/twitchyliquid64/golang-asm/dwarf
+github.com/twitchyliquid64/golang-asm/src
+github.com/twitchyliquid64/golang-asm/sys
+github.com/twitchyliquid64/golang-asm/obj/arm
+github.com/twitchyliquid64/golang-asm/obj/arm64
+github.com/twitchyliquid64/golang-asm/obj/mips
+github.com/twitchyliquid64/golang-asm/obj/ppc64
+github.com/twitchyliquid64/golang-asm/obj/s390x
+github.com/twitchyliquid64/golang-asm/obj/wasm
 # github.com/vmihailenco/msgpack v4.0.4+incompatible
 github.com/vmihailenco/msgpack
 github.com/vmihailenco/msgpack/codes
@@ -22,6 +39,9 @@ github.com/vmihailenco/msgpack/codes
 github.com/wasmerio/go-ext-wasm/wasmer
 # golang.org/x/net v0.0.0-20180724234803-3673e40ba225
 golang.org/x/net/context
+# golang.org/x/sys v0.0.0-20190306220234-b354f8bf4d9e
+golang.org/x/sys/unix
+golang.org/x/sys/windows
 # google.golang.org/appengine v1.6.0
 google.golang.org/appengine/datastore
 google.golang.org/appengine
